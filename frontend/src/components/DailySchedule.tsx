@@ -11,25 +11,27 @@ import { Calendar as CalendarIcon, Clock, MapPin, Check, X, MinusCircle, Info, C
 import { cn } from "@/lib/utils";
 import holidaysData from "@/data/holidays.json";
 import examsData from "@/data/exams.json";
-import scheduleData from "@/data/schedule.json";
+// import scheduleData from "@/data/schedule.json"; // Removed static import
 
 interface Props {
   schedule: ClassSchedule[];
+  semesterConfig?: { start: string, end: string };
   selectedDate: Date;
   onCourseClick: (code: string) => void;
   attendanceRecords: { [key: string]: string }; // subjectCode -> status
   onAttendanceUpdate: (subjectCode: string, status: string | null) => void;
 }
 
-export function DailySchedule({ schedule, selectedDate, onCourseClick, attendanceRecords, onAttendanceUpdate }: Props) {
+export function DailySchedule({ schedule, semesterConfig, selectedDate, onCourseClick, attendanceRecords, onAttendanceUpdate }: Props) {
   const { profile } = useAuth();
   const dayName = format(selectedDate, 'EEEE');
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
-  const isWithinSem = isWithinInterval(selectedDate, {
-    start: parseISO(scheduleData.semesterConfig.start),
-    end: parseISO(scheduleData.semesterConfig.end)
-  });
+  // Defensive check for semesterConfig
+  const isWithinSem = semesterConfig ? isWithinInterval(selectedDate, {
+    start: parseISO(semesterConfig.start),
+    end: parseISO(semesterConfig.end)
+  }) : true; // Default to true if not provided to avoid hiding classes unexpectedly
 
   const holiday = holidaysData.holidays.find(h => h.date === dateStr);
   const examPeriod = examsData.periods.find(p =>
