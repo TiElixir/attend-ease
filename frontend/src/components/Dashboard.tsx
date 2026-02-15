@@ -138,21 +138,19 @@ export function Dashboard() {
     setActiveView('course-detail');
   };
 
-  const handleAttendanceUpdate = async (subjectCode: string, status: string | null) => {
+  const handleAttendanceUpdate = async (subjectCode: string, status: string | null, timeStart?: string) => {
     if (!user || !profile) return;
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
 
     // Optimistic Update
     setAllRecords(prev => {
-      const existingIndex = prev.findIndex(r => r.subjectCode === subjectCode && r.classDate === dateStr);
+      const existingIndex = prev.findIndex(r =>
+        r.subjectCode === subjectCode &&
+        r.classDate === dateStr &&
+        (!timeStart || r.timeStart === timeStart)
+      );
       if (existingIndex >= 0) {
         if (status === null) {
-          // Remove record if status is null/unmarked (logic depends on how we handle unmarking)
-          // Actually button passing null means toggle off?
-          // The DailySchedule passes 'present', 'absent', 'cancelled' or null.
-          // If null, we might want to delete the record?
-          // For now, let's assume we just update it.
-          // If status is null, we filter it out.
           return prev.filter((_, i) => i !== existingIndex);
         }
         const newRecords = [...prev];
@@ -160,13 +158,13 @@ export function Dashboard() {
         return newRecords;
       } else {
         if (status === null) return prev;
-        // Add new record
         return [...prev, {
           studentId: user.uid,
           subjectCode,
           status: status as any,
           classDate: dateStr,
-          markedAt: new Date().toISOString() // temporary
+          timeStart: timeStart || '',
+          markedAt: new Date().toISOString()
         }];
       }
     });
@@ -175,11 +173,11 @@ export function Dashboard() {
       await api.students.markAttendance(user.uid, {
         subjectCode,
         status,
-        classDate: dateStr
+        classDate: dateStr,
+        timeStart
       });
     } catch (e) {
       console.error("Failed to mark attendance", e);
-      // Revert on failure? (TODO: Implement rollback)
     }
   };
 
@@ -254,7 +252,10 @@ export function Dashboard() {
                             onCourseClick={handleCourseClick}
                             attendanceRecords={allRecords
                               .filter(r => r.classDate === format(selectedDate, 'yyyy-MM-dd'))
-                              .reduce((acc, curr) => ({ ...acc, [curr.subjectCode]: curr.status }), {})
+                              .reduce((acc, curr) => {
+                                const key = curr.timeStart ? `${curr.subjectCode}_${curr.timeStart}` : curr.subjectCode;
+                                return { ...acc, [key]: curr.status };
+                              }, {} as Record<string, string | null>)
                             }
                             onAttendanceUpdate={handleAttendanceUpdate}
                           />
@@ -272,7 +273,7 @@ export function Dashboard() {
               <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                 {scheduleData ? (
                   <WeeklySchedule
-                    schedule={scheduleData.classes}
+                    schedule={scheduleData.classes || []}
                     onCourseClick={handleCourseClick}
                   />
                 ) : (

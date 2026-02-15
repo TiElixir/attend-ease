@@ -18,8 +18,8 @@ interface Props {
   semesterConfig?: { start: string, end: string };
   selectedDate: Date;
   onCourseClick: (code: string) => void;
-  attendanceRecords: { [key: string]: string }; // subjectCode -> status
-  onAttendanceUpdate: (subjectCode: string, status: string | null) => void;
+  attendanceRecords: { [key: string]: string | null }; // compositeKey -> status
+  onAttendanceUpdate: (subjectCode: string, status: string | null, timeStart?: string) => void;
 }
 
 export function DailySchedule({ schedule, semesterConfig, selectedDate, onCourseClick, attendanceRecords, onAttendanceUpdate }: Props) {
@@ -44,7 +44,7 @@ export function DailySchedule({ schedule, semesterConfig, selectedDate, onCourse
 
   // Filter out LUNCH (BREAK) and show only academic classes for the group
   // Sort classes chronologically by time_start
-  const filteredClasses = schedule
+  const filteredClasses = (schedule || [])
     .filter(c =>
       c.day === dayName &&
       c.subject_code !== 'BREAK' && // Remove lunch from daily list
@@ -53,8 +53,8 @@ export function DailySchedule({ schedule, semesterConfig, selectedDate, onCourse
     )
     .sort((a, b) => a.time_start.localeCompare(b.time_start));
 
-  const markAttendance = (subjectCode: string, status: AttendanceStatus) => {
-    onAttendanceUpdate(subjectCode, status);
+  const markAttendance = (subjectCode: string, status: AttendanceStatus, timeStart?: string) => {
+    onAttendanceUpdate(subjectCode, status, timeStart);
   };
 
   if (!isWithinSem && !holiday && !examPeriod) {
@@ -124,7 +124,8 @@ export function DailySchedule({ schedule, semesterConfig, selectedDate, onCourse
       ) : (
         <div className="space-y-3">
           {filteredClasses.map((item) => {
-            const currentStatus = attendanceRecords[item.subject_code] || null;
+            const compositeKey = `${item.subject_code}_${item.time_start}`;
+            const currentStatus = attendanceRecords[compositeKey] || attendanceRecords[item.subject_code] || null;
 
             return (
               <Card key={item.subject_code + item.time_start} className={cn(
@@ -165,7 +166,7 @@ export function DailySchedule({ schedule, semesterConfig, selectedDate, onCourse
                       size="sm"
                       variant={currentStatus === 'present' ? 'default' : 'outline'}
                       className={cn("h-8 px-2 text-[10px]", currentStatus === 'present' && "bg-green-600 hover:bg-green-700")}
-                      onClick={() => markAttendance(item.subject_code, currentStatus === 'present' ? null : 'present')}
+                      onClick={() => markAttendance(item.subject_code, currentStatus === 'present' ? null : 'present', item.time_start)}
                     >
                       <Check className="h-3.5 w-3.5 mr-1" />
                       P
@@ -174,7 +175,7 @@ export function DailySchedule({ schedule, semesterConfig, selectedDate, onCourse
                       size="sm"
                       variant={currentStatus === 'absent' ? 'destructive' : 'outline'}
                       className="h-8 px-2 text-[10px]"
-                      onClick={() => markAttendance(item.subject_code, currentStatus === 'absent' ? null : 'absent')}
+                      onClick={() => markAttendance(item.subject_code, currentStatus === 'absent' ? null : 'absent', item.time_start)}
                     >
                       <X className="h-3.5 w-3.5 mr-1" />
                       A
@@ -183,7 +184,7 @@ export function DailySchedule({ schedule, semesterConfig, selectedDate, onCourse
                       size="sm"
                       variant={currentStatus === 'cancelled' ? 'outline' : 'outline'}
                       className={cn("h-8 px-2 text-[10px]", currentStatus === 'cancelled' && "bg-orange-500 text-white hover:bg-orange-600")}
-                      onClick={() => markAttendance(item.subject_code, currentStatus === 'cancelled' ? null : 'cancelled')}
+                      onClick={() => markAttendance(item.subject_code, currentStatus === 'cancelled' ? null : 'cancelled', item.time_start)}
                     >
                       <MinusCircle className="h-3.5 w-3.5 mr-1" />
                       C

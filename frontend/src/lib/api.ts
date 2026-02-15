@@ -36,7 +36,7 @@ export const api = {
             if (!res.ok) throw new Error("Failed to fetch attendance");
             return res.json();
         },
-        markAttendance: async (uid: string, data: { subjectCode: string, status: string | null, classDate: string }) => {
+        markAttendance: async (uid: string, data: { subjectCode: string, status: string | null, classDate: string, timeStart?: string }) => {
             const res = await fetch(`${API_URL}/students/${uid}/attendance`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
