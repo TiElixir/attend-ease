@@ -11,22 +11,49 @@ db = get_db()
 # Assuming data is in ../data/schedule.json (relative to backend/)
 SCHEDULE_PATH = os.path.join(os.path.dirname(__file__), "../data/schedule.json")
 
+# Default schedule data - used if Firestore and local file are both unavailable
+DEFAULT_SCHEDULE = {
+    "semesterConfig": {"start": "2026-01-01", "end": "2026-06-30"},
+    "classes": [
+        {"semester": 2, "branch": "CSB", "class_name": "Basic Electrical", "subject_code": "EE201", "classroom": "U-513", "time_start": "09:55", "time_end": "10:50", "day": "Monday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "Lunch Break", "subject_code": "BREAK", "classroom": "N/A", "time_start": "12:40", "time_end": "13:50", "day": "Monday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "Basic Electrical", "subject_code": "EE201", "classroom": "L-102", "time_start": "09:00", "time_end": "10:50", "day": "Tuesday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "Physics", "subject_code": "PH201", "classroom": "U-802", "time_start": "10:50", "time_end": "12:40", "day": "Tuesday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "Lunch Break", "subject_code": "BREAK", "classroom": "N/A", "time_start": "12:40", "time_end": "13:50", "day": "Tuesday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "Electrical Lab", "subject_code": "EE291", "classroom": "Lab", "time_start": "13:50", "time_end": "16:35", "day": "Tuesday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "Data Structures", "subject_code": "CS201", "classroom": "U-513", "time_start": "09:00", "time_end": "09:55", "day": "Wednesday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "Physics", "subject_code": "PH201", "classroom": "U-513", "time_start": "13:50", "time_end": "14:45", "day": "Wednesday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "Mathematics II", "subject_code": "MA201", "classroom": "U-513", "time_start": "14:45", "time_end": "16:35", "day": "Wednesday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "AI & ML", "subject_code": "CS202", "classroom": "U-513", "time_start": "09:00", "time_end": "09:55", "day": "Thursday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "Graphics", "subject_code": "CS203", "classroom": "U-513", "time_start": "09:55", "time_end": "12:40", "day": "Thursday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "Lunch Break", "subject_code": "BREAK", "classroom": "N/A", "time_start": "12:40", "time_end": "13:50", "day": "Thursday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "Data Structures", "subject_code": "CS201", "classroom": "Sem Hall", "time_start": "13:50", "time_end": "15:40", "day": "Thursday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "PT", "subject_code": "PT", "classroom": "Ground", "time_start": "15:40", "time_end": "16:35", "day": "Thursday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "Energy Environment", "subject_code": "EE202", "classroom": "U-513", "time_start": "09:00", "time_end": "10:50", "day": "Friday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "Mathematics II", "subject_code": "MA201", "classroom": "U-513", "time_start": "10:50", "time_end": "12:40", "day": "Friday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "Lunch Break", "subject_code": "BREAK", "classroom": "N/A", "time_start": "12:40", "time_end": "13:50", "day": "Friday", "group": "B"},
+        {"semester": 2, "branch": "CSB", "class_name": "Data Structure Lab", "subject_code": "CS291", "classroom": "Lab", "time_start": "13:50", "time_end": "16:35", "day": "Friday", "group": "B"},
+    ]
+}
+
 @router.get("/")
 def get_schedule():
     try:
-        # Fetch from Firestore instead of local file
-        doc = db.collection('config').document('schedule').get()
+        # Try Firestore first
+        if db:
+            doc = db.collection('config').document('schedule').get()
+            if doc.exists:
+                return doc.to_dict()
         
-        if not doc.exists:
-             # Fallback to local file for initial setup or if migration hasn't happened? 
-             # Or just return 404? 
-             # Let's try fallback to local file if Firestore is empty to be nice
-             if os.path.exists(SCHEDULE_PATH):
-                 with open(SCHEDULE_PATH, "r") as f:
-                     return json.load(f)
-             raise HTTPException(status_code=404, detail="Schedule configuration not found")
-             
-        return doc.to_dict()
+        # Fallback to local file
+        if os.path.exists(SCHEDULE_PATH):
+            with open(SCHEDULE_PATH, "r") as f:
+                return json.load(f)
+        
+        # Final fallback: hardcoded default
+        return DEFAULT_SCHEDULE
     except Exception as e:
         if isinstance(e, HTTPException): raise e
-        raise HTTPException(status_code=500, detail=str(e))
+        # Even on error, return default schedule instead of crashing
+        print(f"Schedule fetch error: {e}")
+        return DEFAULT_SCHEDULE

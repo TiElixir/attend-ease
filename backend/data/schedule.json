@@ -18,33 +18,11 @@
     {
       "semester": 2,
       "branch": "CSB",
-      "class_name": "AI & ML",
-      "subject_code": "EE201",
-      "classroom": "U-513",
-      "time_start": "10:50",
-      "time_end": "12:40",
-      "day": "Monday",
-      "group": "B"
-    },
-    {
-      "semester": 2,
-      "branch": "CSB",
       "class_name": "Lunch Break",
       "subject_code": "BREAK",
       "classroom": "N/A",
       "time_start": "12:40",
       "time_end": "13:50",
-      "day": "Monday",
-      "group": "B"
-    },
-    {
-      "semester": 2,
-      "branch": "CSB",
-      "class_name": "Physics Lab",
-      "subject_code": "PH1201N",
-      "classroom": "Lab",
-      "time_start": "13:50",
-      "time_end": "16:35",
       "day": "Monday",
       "group": "B"
     },
