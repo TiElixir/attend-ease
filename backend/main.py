@@ -9,14 +9,11 @@ load_dotenv()
 app = FastAPI(title="AttendEase Backend")
 
 # Allow CORS for the frontend
+allow_origins = os.getenv("ALLOW_ORIGINS", "http://localhost:3000,http://localhost:9002,http://127.0.0.1:3000,http://127.0.0.1:9002").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000", 
-        "http://localhost:9002",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:9002"
-    ], # Adjust ports as needed
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
