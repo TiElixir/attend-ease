@@ -21,6 +21,13 @@ REDIRECT_URI = os.getenv("REDIRECT_URI", "http://localhost:8000/auth/callback")
 @router.get("/login")
 def login_google():
     """Redirects the user to the Google Consent Screen."""
+    from database import init_error
+    if init_error:
+        return Response(content=f"Backend Error: {init_error}. Please check Vercel Environment Variables.", status_code=500)
+        
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
+         return Response(content="Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in Environment Variables.", status_code=500)
+
     scope = "openid email profile"
     return RedirectResponse(
         f"https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={GOOGLE_CLIENT_ID}&redirect_uri={REDIRECT_URI}&scope={scope}&access_type=offline"

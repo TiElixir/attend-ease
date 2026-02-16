@@ -29,4 +29,7 @@ app.include_router(admin.router, prefix="/admin", tags=["Admin"])
 
 @app.get("/")
 def read_root():
+    from database import init_error
+    if init_error:
+        return {"message": "AttendEase API is running, but Backend Error: " + init_error}
     return {"message": "AttendEase API is running"}
