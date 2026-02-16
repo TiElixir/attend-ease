@@ -7,6 +7,12 @@ from backend.main import app as fastapi_app
 async def app(scope, receive, send):
     if scope["type"] == "http":
         path = scope.get("path", "")
+        # Debug logging for Vercel
+        print(f"Vercel Incoming Path: {path}")
+        
         if path.startswith("/api"):
             scope["path"] = path[4:] or "/"  # Strip /api, default to / if empty
+            
+        print(f"FastAPI Adjusted Path: {scope['path']}")
+            
     await fastapi_app(scope, receive, send)

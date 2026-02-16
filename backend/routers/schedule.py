@@ -7,9 +7,22 @@ from backend.database import get_db
 router = APIRouter()
 db = get_db()
 
-# Load schedule data once
-# Assuming data is in ../data/schedule.json (relative to backend/)
-SCHEDULE_PATH = os.path.join(os.path.dirname(__file__), "../data/schedule.json")
+# Robust path resolution for Vercel
+current_dir = os.path.dirname(os.path.abspath(__file__))
+possible_paths = [
+    os.path.join(current_dir, "../data/schedule.json"), # Local / Standard
+    os.path.join(current_dir, "data/schedule.json"),    # Flat structure
+    "/var/task/backend/data/schedule.json",            # AWS Lambda / Vercel specific
+    "backend/data/schedule.json"                        # Relative from root
+]
+
+SCHEDULE_PATH = None
+for path in possible_paths:
+    if os.path.exists(path):
+        SCHEDULE_PATH = path
+        break
+
+print(f"Resolved SCHEDULE_PATH: {SCHEDULE_PATH}")
 
 # Default schedule data - used if Firestore and local file are both unavailable
 DEFAULT_SCHEDULE = {
