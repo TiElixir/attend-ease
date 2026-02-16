@@ -12,12 +12,23 @@ try:
     # Check if app is already initialized to avoid errors during hot reload
     app = firebase_admin.get_app()
 except ValueError:
-    # If using a specific service account file:
-    # cred = credentials.Certificate("path/to/serviceAccountKey.json")
-    # firebase_admin.initialize_app(cred)
+    # Vercel: Load from ENV variable string
+    firebase_sa_json = os.getenv("FIREBASE_SERVICE_ACCOUNT")
     
-    # Or rely on GOOGLE_APPLICATION_CREDENTIALS env var
-    firebase_admin.initialize_app()
+    if firebase_sa_json:
+        import json
+        cred_dict = json.loads(firebase_sa_json)
+        cred = credentials.Certificate(cred_dict)
+        firebase_admin.initialize_app(cred)
+    
+    # Local: Load from file if exists
+    elif os.path.exists("backend/serviceAccountKey.json"):
+        cred = credentials.Certificate("backend/serviceAccountKey.json")
+        firebase_admin.initialize_app(cred)
+        
+    # Fallback to default (Google Cloud Run / Local with Auth set)
+    else:
+        firebase_admin.initialize_app()
 
 db = firestore.client()
 
