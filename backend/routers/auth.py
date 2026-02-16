@@ -13,10 +13,20 @@ router = APIRouter()
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-# Frontend URL to redirect back to after successful login
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:9002")
-# This backend's callback URL
-REDIRECT_URI = os.getenv("REDIRECT_URI", "http://localhost:8000/auth/callback")
+
+# Auto-detect Vercel URL
+vercel_url = os.getenv("VERCEL_URL") or os.getenv("VERCEL_PROJECT_PRODUCTION_URL")
+if vercel_url:
+    # Vercel env vars do not include https://
+    base_url = f"https://{vercel_url}"
+    # Frontend is the base URL
+    FRONTEND_URL = os.getenv("FRONTEND_URL", base_url)
+    # Callback is /api/auth/callback
+    REDIRECT_URI = os.getenv("REDIRECT_URI", f"{base_url}/api/auth/callback")
+else:
+    # Local fallback
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:9002")
+    REDIRECT_URI = os.getenv("REDIRECT_URI", "http://localhost:8000/auth/callback")
 
 @router.get("/login")
 def login_google():
